@@ -17,10 +17,9 @@ checkFile() {
 }
 
 printInfo() {
-  theme=$1
-  year=$2
-  name=$3
-  setnum=$4
+  theme_name=$1
+  theme_year=$2
+  theme_set=$3
 
   sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "$theme_set.*\|$theme_year\|$theme_name")
   echo "$sets" | while IFS="|" read setnum name year theme; do
@@ -58,10 +57,9 @@ checkDir() {
 }
 
 deleteSET() {
-  theme=$1
-  year=$2
-  name=$3
-  setnum=$4
+  theme_name=$1
+  theme_year=$2
+  theme_set=$3
 
   sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "$theme_set.*?\|$theme_year\|$theme_name")
   echo "$sets" | while IFS="|" read setnum name year theme; do
