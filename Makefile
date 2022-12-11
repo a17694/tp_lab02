@@ -3,4 +3,4 @@ help: ## This help.
 
 # Commands
 execute: ## Cria o executavel do script bash
-	chmod 755 tp02_17694.sh
+	@chmod 755 tp02_17694.sh && ./tp02_17694.sh
