@@ -5,3 +5,9 @@
 ## Trabalho Prático 02 (T2)
 #### Linux -shell bash
 
+***
+
+- Criar a pasta enunciado com o file legos.zip lá dentro
+- make execute
+
+***
