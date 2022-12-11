@@ -33,14 +33,14 @@ printInfo() {
 
     parts_sets=$(cat "$FILEPARTSETS" | grep -w "$setnum" | sed -e 's/\t/|/g')
     [ ! -n "$parts_sets" ] && return
-    printf "Part_Num\t\tPart_Name\t\t\t\t\t\tQty\n"
+    printf "Class\t\tPart_Num\t\tPart_Name\t\t\t\t\t\tQty\n"
     echo "$parts_sets" | while IFS="|" read setn qty part_num; do
 
       parts=$(cat "$FILEPARTS" | grep -w "$part_num" | sed -e 's/\t/|/g')
       [ ! -n "$parts" ] && break
 
       echo "$parts" | while IFS="|" read pnum part_name class stock; do
-        printf '%s\t%s\t\t\t\t%d\n' "$part_num" "$part_name" "$qty"
+        printf '%s\t%s\t%s\t\t\t\t%d\n' "$class" "$part_num" "$part_name" "$qty"
       done
 
     done
@@ -70,9 +70,9 @@ deleteSET() {
     fi
     theme=$(echo "$theme" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
     name=$(echo "$name" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
-
-    if [ -d "$MAINDIR/$theme/$year/$name" ]; then
-      rm -rf "$MAINDIR/$theme/$year/$name"
+    path="$MAINDIR/$theme/$year/$name-$setnum"
+    if [ -d "$path" ]; then
+      rm -rf "$path"
     else
       echo "O diretorio $path não existe!"
     fi
@@ -96,7 +96,7 @@ createSET() {
     parts_sets=$(cat "$FILEPARTSETS" | grep -w "$setnum" | sed -e 's/\t/|/g')
     [ ! -n "$parts_sets" ] && return
 
-    mkdir -p "$MAINDIR/$theme/$year/$name"
+    mkdir -p "$MAINDIR/$theme/$year/$name-$setnum"
 
     echo "$parts_sets" | while IFS="|" read setn qty part_num; do
 
@@ -105,8 +105,9 @@ createSET() {
 
       echo "$parts" | while IFS="|" read pnum part_name class stock; do
         part_name=$(echo "$part_name" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
-        echo "$part_num|$part_name|$qty" >"$MAINDIR/$theme/$year/$name/$part_name.txt"
-        echo "Ficheiro criado com sucesso -> $MAINDIR/$theme/$year/$name/$part_name.txt"
+        class=$(echo "$class" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
+        echo "$part_num|$part_name|$qty" >> "$MAINDIR/$theme/$year/$name-$setnum/$class.txt"
+        echo "Ficheiro criado com sucesso -> $MAINDIR/$theme/$year/$name-$setnum/$class.txt"
       done
 
     done
@@ -127,6 +128,8 @@ listOptions() {
 
     echo "1- Criar Diretorio do conjunto\n2- Ver Conjunto\n3- Eliminar Conjunto"
     read option
+
+    [ ! -n "$option" ] && continue
 
     if [ $option = "back" ]; then
       return
@@ -157,17 +160,19 @@ listName() {
   while [ "$option" != "exit" ]; do
     echo "" >"$TEMPDIR/option.txt"
     echo "ID\tNome"
-    sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "\|$theme_year\|$theme_name" | sort -t'|' -u -k2)
+    sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "\|$theme_year\|$theme_name" | sort -t'|' -k2)
     echo "$sets" | while IFS="|" read setnum name year theme; do
 
       echo "$i- $setnum" >>"$TEMPDIR/option.txt"
 
       theme=$(echo "$theme" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
       name=$(echo "$name" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
-      echo "$i- $name"
+      echo "$i- $name-$setnum"
       i=$((i + 1))
     done
     read option
+
+    [ ! -n "$option" ] && continue
 
     if [ $option = "back" ]; then
       return
@@ -205,6 +210,8 @@ listYears() {
       i=$((i + 1))
     done
     read option
+
+    [ ! -n "$option" ] && continue
 
     if [ $option = "back" ]; then
       return
@@ -248,7 +255,7 @@ searchThemes() {
   checkFile $FILESETS
   i=1
   while [ "$option" != "exit" ]; do
-    echo "Qual é o tema que desja procurar?"
+    echo "Qual é o tema que deseja procurar?"
     read search
 
     [ ! -n "$search" ] && continue
@@ -258,7 +265,7 @@ searchThemes() {
     sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE ".*\|.*\|.*\|$search" | sort -t'|' -u -k4)
     [ ! -n "$sets" ] && continue
     echo "$sets" | while IFS="|" read setnum name year theme; do
-      #Tema / Ano / Conjunto
+
       echo "$i- $theme" >>"$TEMPDIR/option.txt"
       #theme=$(echo "$theme" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
       #name=$(echo "$name" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
@@ -295,10 +302,10 @@ fi
 
 OLDIFS=$IFS
 
-echo "Deseja realmente prosseguir?[n/s]"
-read text
+echo "Deseja realmente prosseguir?[n/S]"
+read -r text
 
-if [ $text = "s" ] || [ $text = "S" ]; then
+if [ -n "$text" ] && [ "$text" = s ] || [ "$text" = S ]; then
   echo "------Iniciado------"
 
   # Descompactar os ficheiros zip do enunciado
