@@ -8,6 +8,19 @@ FILEPARTS="./temp/parts.tsv"
 TEMPDIR="./temp"
 
 # Functions
+zipPath (){
+  path=$1
+  name=$2
+
+  if [ ! -d "$path" ]; then
+    echo "O diretorio $path não existe!"
+    exit
+  fi
+
+  zip -r "$name.zip" $path
+  printf "O ficheiro %s.zip foi criado com sucesso!\n" "$name"
+}
+
 checkFile() {
   file=$1
   if [ ! -f "$file" ]; then
@@ -104,7 +117,7 @@ createSET() {
       echo "$parts" | while IFS="|" read pnum part_name class stock; do
         part_name=$(echo "$part_name" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
         class=$(echo "$class" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
-        echo "$part_num|$part_name|$qty" >> "$MAINDIR/$theme/$year/$name-$setnum/$class.txt"
+        echo "$part_num|$part_name|$qty" >>"$MAINDIR/$theme/$year/$name-$setnum/$class.txt"
         echo "Ficheiro criado com sucesso -> $MAINDIR/$theme/$year/$name-$setnum/$class.txt"
       done
 
@@ -237,13 +250,17 @@ listThemes() {
       echo "$i- $theme"
       i=$((i + 1))
     done
-    read option
+    read -r option
 
-    if [ $option != "exit" ]; then
+    [ -z "$option" ] && continue
+
+    if [ "$option" = "back" ]; then
+      return
+    fi
+
+    if [ "$option" != "exit" ]; then
       option=$(cat "$TEMPDIR/option.txt" | grep -w "$option" | sed -e "s/^$option- *//")
       listYears $option
-    else
-      break
     fi
 
   done
@@ -270,11 +287,11 @@ searchThemes() {
       echo "$i- $theme"
       i=$((i + 1))
     done
-    num_lines=$(wc --lines < "$TEMPDIR/option.txt")
+    num_lines=$(wc --lines <"$TEMPDIR/option.txt")
     num_lines=$((num_lines - 1))
     printf 'Total de temas encontrados: %d\n' "$num_lines"
 
-    echo "Indique o ID do tema"
+    echo "Indique o ID do tema:"
     read option
 
     [ ! -n "$option" ] && continue
@@ -284,6 +301,43 @@ searchThemes() {
       listYears $option
     fi
 
+  done
+}
+
+menu() {
+  option=0
+  while [ "$option" != "exit" ]; do
+    echo "MENU"
+    echo "1- Listar Todos os temas"
+    echo "2- Procurar Temas"
+    echo "3- Comprimir pasta LEGOs"
+    echo "back- Voltar"
+    echo "exit- Sair"
+    echo "Digite a opção pretendida:"
+    read -r option
+
+    [ "$option" = "exit" ] && continue
+
+    if [ -z "$option" ] || [ $option -le 0 ]; then
+      continue
+    fi
+
+    case $option in
+    	1)
+    		listThemes
+    		continue
+    		;;
+    	2)
+    		searchThemes
+    		continue
+    		;;
+      3)
+        zipPath LEGOs LEGOs
+        continue
+        ;;
+    	4)
+    		;;
+      esac
   done
 }
 
@@ -312,8 +366,8 @@ if [ -n "$text" ] && [ "$text" = s ] || [ "$text" = S ]; then
     unzip "$FILEZIP" -d ./temp
   fi
 
-  #  listThemes
-  searchThemes
+  menu
+
 else
   echo "Não foi executado qualquer comando!"
 fi
