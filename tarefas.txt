@@ -1,0 +1,28 @@
+verificar se exite o file se nao sai do programa e da erro
+fazer unzip ao file
+listar todos os temas de legos
+    listar todos os anos
+        listar todos os conjuntos
+            selecionado o conjunto
+                ver todas as peças necessarias para o conjunto com quantidade
+                perguntar se quer guardar no diretoriode destino
+                voltar
+                sair
+           voltar
+           sair
+        voltar
+        sair
+    voltar
+    sair
+listar guardados
+      ver todas as peças necessarias para o conjunto com quantidade
+      apagar um deles
+      zipar um deles
+      voltar
+      sair
+sair
+
+
+- criar funcoes para cada passo e ver se pode reaproveitar
+- usar o while e read cabeçalhos
+- numerar os conteudos para saber que linha pegar
