@@ -119,8 +119,6 @@ createSET() {
   checkFile $FILESETS
   sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "$theme_set.*\|$theme_year\|$theme_name")
   echo "$sets" | while IFS="|" read setnum name year theme; do
-    echo $theme
-    echo $theme_name
     if [ "$theme" != "$theme_name" ]; then
       continue
     fi
@@ -151,10 +149,18 @@ createSET() {
   done
 }
 
-# Cria todos os conjuntos contidos nos files tsv
+# Cria todos ou apenas um conjunto
+# theme_name - nome do tema ou null
 createAllSETS() {
+  theme_name=$1
+
   checkFile $FILESETS
-  themes=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | sort -t'|' -u -k4)
+  if [ -z $theme_name ]; then
+    themes=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | sort -t'|' -u -k4)
+  else
+    themes=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE ".*\|.*\|.*\|$theme_name" | sort -t'|' -u -k4)
+  fi
+  echo "$themes"
   echo "$themes" | while IFS="|" read setnum name year theme_name; do
     sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE ".*\|.*\|.*\|$theme_name" | sort -t'|' -k3)
     echo "$sets" | while IFS="|" read setnum name year theme; do
@@ -164,6 +170,7 @@ createAllSETS() {
     done
 
   done
+  return
 }
 
 # Lista opções para o conjunto pretendido
@@ -355,6 +362,43 @@ searchThemes() {
   done
 }
 
+# Criar o tema completo selecionado
+createFullTheme() {
+  checkFile $FILESETS
+  i=1
+  while [ "$option" != "exit" ]; do
+    echo "Qual é o tema que deseja criar?"
+    read search
+
+    [ ! -n "$search" ] && continue
+
+    echo "" >"$TEMPDIR/option.txt"
+    echo "ID\tTema"
+    sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE ".*\|.*\|.*\|$search" | sort -t'|' -u -k4)
+    [ ! -n "$sets" ] && continue
+    echo "$sets" | while IFS="|" read setnum name year theme; do
+
+      echo "$i- $theme" >>"$TEMPDIR/option.txt"
+      echo "$i- $theme"
+      i=$((i + 1))
+    done
+    num_lines=$(wc --lines <"$TEMPDIR/option.txt")
+    num_lines=$((num_lines - 1))
+    printf 'Total de temas encontrados: %d\n' "$num_lines"
+
+    echo "Indique o ID do tema:"
+    read option
+
+    [ ! -n "$option" ] && continue
+
+    if [ $option != "exit" ]; then
+      option=$(cat "$TEMPDIR/option.txt" | grep -w "$option" | sed -e "s/^$option- *//")
+      createAllSETS $option
+    fi
+
+  done
+}
+
 # Menu
 menu() {
   option=0
@@ -362,8 +406,9 @@ menu() {
     echo "MENU"
     echo "1- Listar Todos os temas"
     echo "2- Procurar Temas"
-    echo "3- Criar todos os temas"
-    echo "4- Comprimir pasta LEGOs"
+    echo "3- Criar Tema completo"
+    echo "4- Criar todos os temas"
+    echo "5- Comprimir pasta LEGOs"
     echo "back- Voltar"
     echo "exit- Sair"
     echo "Digite a opção pretendida:"
@@ -385,14 +430,18 @@ menu() {
       continue
       ;;
     3)
-      createAllSETS
+      createFullTheme
       continue
       ;;
     4)
+      createAllSETS
+      continue
+      ;;
+    5)
       zipPath LEGOs LEGOs
       continue
       ;;
-    4) ;;
+    6) ;;
 
     esac
   done
