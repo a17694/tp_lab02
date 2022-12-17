@@ -8,7 +8,11 @@ FILEPARTS="./temp/parts.tsv"
 TEMPDIR="./temp"
 
 # Functions
-zipPath (){
+
+# Cria ficheiro zip
+# path - caminho da pasta
+# name - nome para o ficheiro .zip
+zipPath() {
   path=$1
   name=$2
 
@@ -21,6 +25,8 @@ zipPath (){
   printf "O ficheiro %s.zip foi criado com sucesso!\n" "$name"
 }
 
+# Verifica se file existe
+# file - caminho do ficheiro a verificar
 checkFile() {
   file=$1
   if [ ! -f "$file" ]; then
@@ -29,11 +35,26 @@ checkFile() {
   fi
 }
 
+# Verifica se a pasta existe
+# path - caminho da pasta a verificar
+checkDir() {
+  path=$1
+  if [ ! -d "$path" ]; then
+    echo "O diretorio $path não existe!"
+    exit
+  fi
+}
+
+# Apresenta o conjunto pretendido
+# theme_name - nome do tema
+# theme_year - ano pretendido
+# theme_set - numero do set
 printInfo() {
   theme_name=$1
   theme_year=$2
   theme_set=$3
 
+  checkFile $FILESETS
   sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "$theme_set.*\|$theme_year\|$theme_name")
   echo "$sets" | while IFS="|" read setnum name year theme; do
     if [ $theme != $theme_name ]; then
@@ -43,12 +64,14 @@ printInfo() {
     theme=$(echo "$theme" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
     name=$(echo "$name" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
 
-    parts_sets=$(cat "$FILEPARTSETS" | grep -w "$setnum" | sed -e 's/\t/|/g')
+    checkFile $FILEPARTSETS
+    parts_sets=$(cat "$FILEPARTSETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "$setnum\|.*\|.*")
     [ ! -n "$parts_sets" ] && return
     printf "Class\t\tPart_Num\t\tPart_Name\t\t\t\t\t\tQty\n"
     echo "$parts_sets" | while IFS="|" read setn qty part_num; do
 
-      parts=$(cat "$FILEPARTS" | grep -w "$part_num" | sed -e 's/\t/|/g')
+      checkFile $FILEPARTS
+      parts=$(cat "$FILEPARTS" | sed -e 's/\t/|/g' | grep -iE "$part_num\|.*\|.*\|.*")
       [ ! -n "$parts" ] && break
 
       echo "$parts" | while IFS="|" read pnum part_name class stock; do
@@ -61,19 +84,16 @@ printInfo() {
   echo "\n"
 }
 
-checkDir() {
-  path=$1
-  if [ ! -d "$path" ]; then
-    echo "O diretorio $path não existe!"
-    exit
-  fi
-}
-
+# Apaga o conjunto pretendido
+# theme_name - nome do tema
+# theme_year - ano pretendido
+# theme_set - numero do set
 deleteSET() {
   theme_name=$1
   theme_year=$2
   theme_set=$3
 
+  checkFile $FILESETS
   sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "$theme_set.*?\|$theme_year\|$theme_name")
   echo "$sets" | while IFS="|" read setnum name year theme; do
     if [ $theme != $theme_name ]; then
@@ -90,42 +110,70 @@ deleteSET() {
   done
 }
 
+# Cria o conjunto pretendido
+# theme_name - nome do tema
+# theme_year - ano pretendido
+# theme_set - numero do set
 createSET() {
   theme_name=$1
   theme_year=$2
   theme_set=$3
 
+  checkFile $FILESETS
   sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "$theme_set.*\|$theme_year\|$theme_name")
   echo "$sets" | while IFS="|" read setnum name year theme; do
-    if [ $theme != $theme_name ]; then
+    echo $theme
+    echo $theme_name
+    if [ "$theme" != "$theme_name" ]; then
       continue
     fi
 
-    theme=$(echo "$theme" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
-    name=$(echo "$name" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
+    theme=$(echo "$theme" | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
+    name=$(echo "$name" | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
+    #name=$(echo "$name" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
 
-    parts_sets=$(cat "$FILEPARTSETS" | grep -w "$setnum" | sed -e 's/\t/|/g')
-    [ ! -n "$parts_sets" ] && return
+    checkFile $FILEPARTSETS
+    parts_sets=$(cat "$FILEPARTSETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "$setnum\|.*\|.*")
+    [ ! -n "$parts_sets" ] && continue
 
-    mkdir -p "$MAINDIR/$theme/$year/$name-$setnum"
-
+    path="$MAINDIR/$theme/$year/$name-$setnum"
+    if [ ! -d "$path" ]; then
+      mkdir -p "$path"
+    fi
     echo "$parts_sets" | while IFS="|" read setn qty part_num; do
 
-      parts=$(cat "$FILEPARTS" | grep -w "$part_num" | sed -e 's/\t/|/g')
-      [ ! -n "$parts" ] && break
-
+      checkFile $FILEPARTS
+      parts=$(cat "$FILEPARTS" | sed -e 's/\t/|/g' | grep -iE "$part_num\|.*\|.*\|.*")
+      [ ! -n "$parts" ] && continue
       echo "$parts" | while IFS="|" read pnum part_name class stock; do
         part_name=$(echo "$part_name" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
         class=$(echo "$class" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
-        echo "$part_num|$part_name|$qty" >>"$MAINDIR/$theme/$year/$name-$setnum/$class.txt"
-        echo "Ficheiro criado com sucesso -> $MAINDIR/$theme/$year/$name-$setnum/$class.txt"
+        echo "$pnum\t$part_name\t$qty" >>"$path/$class.txt"
+        echo "Ficheiro criado com sucesso -> $path/$class.txt"
       done
+    done
+  done
+}
+
+# Cria todos os conjuntos contidos nos files tsv
+createAllSETS() {
+  checkFile $FILESETS
+  themes=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | sort -t'|' -u -k4)
+  echo "$themes" | while IFS="|" read setnum name year theme_name; do
+    sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE ".*\|.*\|.*\|$theme_name" | sort -t'|' -u -k3)
+    echo "$sets" | while IFS="|" read setnum name year theme; do
+
+      createSET $theme $year $setnum
 
     done
 
   done
 }
 
+# Lista opções para o conjunto pretendido
+# theme_name - nome do tema
+# theme_year - ano pretendido
+# theme_set - numero do set
 listOptions() {
   theme_name=$1
   theme_year=$2
@@ -161,6 +209,9 @@ listOptions() {
   done
 }
 
+# Lista todos os conjuntos de um tema e ano selecionado
+# theme_name - nome do tema
+# theme_year - ano pretendido
 listName() {
   theme_name=$1
   theme_year=$2
@@ -196,6 +247,8 @@ listName() {
   done
 }
 
+# Lista todos os anos de um tema selecionado
+# theme_name - nome do tema
 listYears() {
   theme_name=$1
 
@@ -235,6 +288,7 @@ listYears() {
   done
 }
 
+# Lista todos os temas contidos no file tsv
 listThemes() {
   checkFile $FILESETS
   i=1
@@ -266,6 +320,7 @@ listThemes() {
   done
 }
 
+# Pesquisa por temas contidos no file tsv
 searchThemes() {
   checkFile $FILESETS
   i=1
@@ -304,13 +359,15 @@ searchThemes() {
   done
 }
 
+# Menu
 menu() {
   option=0
   while [ "$option" != "exit" ]; do
     echo "MENU"
     echo "1- Listar Todos os temas"
     echo "2- Procurar Temas"
-    echo "3- Comprimir pasta LEGOs"
+    echo "3- Criar todos os temas"
+    echo "4- Comprimir pasta LEGOs"
     echo "back- Voltar"
     echo "exit- Sair"
     echo "Digite a opção pretendida:"
@@ -323,23 +380,29 @@ menu() {
     fi
 
     case $option in
-    	1)
-    		listThemes
-    		continue
-    		;;
-    	2)
-    		searchThemes
-    		continue
-    		;;
-      3)
-        zipPath LEGOs LEGOs
-        continue
-        ;;
-    	4)
-    		;;
-      esac
+    1)
+      listThemes
+      continue
+      ;;
+    2)
+      searchThemes
+      continue
+      ;;
+    3)
+      createAllSETS
+      continue
+      ;;
+    4)
+      zipPath LEGOs LEGOs
+      continue
+      ;;
+    4) ;;
+
+    esac
   done
 }
+
+# APP
 
 # Introdução
 echo "Bem vindo ao Trabalho Prático 02\r
@@ -366,6 +429,7 @@ if [ -n "$text" ] && [ "$text" = s ] || [ "$text" = S ]; then
     unzip "$FILEZIP" -d ./temp
   fi
 
+  # Apresenta o menu
   menu
 
 else
