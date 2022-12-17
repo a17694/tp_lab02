@@ -9,22 +9,6 @@ TEMPDIR="./temp"
 
 # Functions
 
-# Cria ficheiro zip
-# path - caminho da pasta
-# name - nome para o ficheiro .zip
-zipPath() {
-  path=$1
-  name=$2
-
-  if [ ! -d "$path" ]; then
-    echo "O diretorio $path não existe!"
-    exit
-  fi
-
-  zip -r "$name.zip" $path
-  printf "O ficheiro %s.zip foi criado com sucesso!\n" "$name"
-}
-
 # Verifica se file existe
 # file - caminho do ficheiro a verificar
 checkFile() {
@@ -43,6 +27,19 @@ checkDir() {
     echo "O diretorio $path não existe!"
     exit
   fi
+}
+
+# Cria ficheiro zip
+# path - caminho da pasta
+# name - nome para o ficheiro .zip
+zipPath() {
+  path=$1
+  name=$2
+
+  checkDir $path
+
+  zip -r "$name.zip" $path
+  printf "O ficheiro %s.zip foi criado com sucesso!\n" "$name"
 }
 
 # Apresenta o conjunto pretendido
@@ -130,7 +127,6 @@ createSET() {
 
     theme=$(echo "$theme" | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
     name=$(echo "$name" | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
-    #name=$(echo "$name" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
 
     checkFile $FILEPARTSETS
     parts_sets=$(cat "$FILEPARTSETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "$setnum\|.*\|.*")
@@ -160,7 +156,7 @@ createAllSETS() {
   checkFile $FILESETS
   themes=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | sort -t'|' -u -k4)
   echo "$themes" | while IFS="|" read setnum name year theme_name; do
-    sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE ".*\|.*\|.*\|$theme_name" | sort -t'|' -u -k3)
+    sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE ".*\|.*\|.*\|$theme_name" | sort -t'|' -k3)
     echo "$sets" | while IFS="|" read setnum name year theme; do
 
       createSET $theme $year $setnum
@@ -413,6 +409,10 @@ do curso LESI-PL"
 if [ ! -f "$FILEZIP" ]; then
   echo 'O ficheiro lego.zip não existe por favor coloque o mesmo dentro da pasta enunciado!'
   exit
+fi
+
+if [ -d "./LEGOs" ]; then
+  rm -rf LEGOs
 fi
 
 OLDIFS=$IFS
