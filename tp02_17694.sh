@@ -352,7 +352,11 @@ searchThemes() {
     echo "Indique o ID do tema:"
     read option
 
-    [ ! -n "$option" ] && continue
+    [ -z "$option" ] && continue
+
+    if [ "$option" = "back" ]; then
+      return
+    fi
 
     if [ $option != "exit" ]; then
       option=$(cat "$TEMPDIR/option.txt" | grep -w "$option" | sed -e "s/^$option- *//")
@@ -389,7 +393,11 @@ createFullTheme() {
     echo "Indique o ID do tema:"
     read option
 
-    [ ! -n "$option" ] && continue
+    [ -z "$option" ] && continue
+
+    if [ "$option" = "back" ]; then
+      return
+    fi
 
     if [ $option != "exit" ]; then
       option=$(cat "$TEMPDIR/option.txt" | grep -w "$option" | sed -e "s/^$option- *//")
@@ -460,9 +468,9 @@ if [ ! -f "$FILEZIP" ]; then
   exit
 fi
 
-if [ -d "./LEGOs" ]; then
-  rm -rf LEGOs
-fi
+#if [ -d "./LEGOs" ]; then
+#  rm -rf LEGOs
+#fi
 
 OLDIFS=$IFS
 
