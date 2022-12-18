@@ -1,7 +1,7 @@
 #!/bin/sh
 # VARS
 MAINDIR="LEGOs"
-FILEZIP="./enunciado/lego.zip"
+FILEZIP="./lego.zip"
 FILESETS="./temp/sets.tsv"
 FILEPARTSETS="./temp/parts_sets.tsv"
 FILEPARTS="./temp/parts.tsv"
@@ -117,7 +117,7 @@ createSET() {
   theme_set=$3
 
   checkFile $FILESETS
-  sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "$theme_set.*\|$theme_year\|$theme_name")
+  sets=$(cat "$FILESETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "^$theme_set.*\|$theme_year\|$theme_name")
   echo "$sets" | while IFS="|" read setnum name year theme; do
     if [ "$theme" != "$theme_name" ]; then
       continue
@@ -127,7 +127,7 @@ createSET() {
     name=$(echo "$name" | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
 
     checkFile $FILEPARTSETS
-    parts_sets=$(cat "$FILEPARTSETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "$setnum\|.*\|.*")
+    parts_sets=$(cat "$FILEPARTSETS" | tail -n +2 | sed -e 's/\t/|/g' | grep -iE "^$setnum\|.*\|.*")
     [ ! -n "$parts_sets" ] && continue
 
     path="$MAINDIR/$theme/$year/$name-$setnum"
@@ -137,7 +137,7 @@ createSET() {
     echo "$parts_sets" | while IFS="|" read setn qty part_num; do
 
       checkFile $FILEPARTS
-      parts=$(cat "$FILEPARTS" | sed -e 's/\t/|/g' | grep -iE "$part_num\|.*\|.*\|.*")
+      parts=$(cat "$FILEPARTS" | sed -e 's/\t/|/g' | grep -iE "^$part_num\|")
       [ ! -n "$parts" ] && continue
       echo "$parts" | while IFS="|" read pnum part_name class stock; do
         part_name=$(echo "$part_name" | sed -e 's/^[[:space:]]*//' | sed -e 's/[^A-Za-z0-9_-]/_/g' | sed 's/\_$//')
@@ -446,7 +446,7 @@ menu() {
       continue
       ;;
     5)
-      zipPath LEGOs LEGOs
+      zipPath LEGOs primeira
       continue
       ;;
     6) ;;
