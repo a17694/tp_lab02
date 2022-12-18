@@ -10,5 +10,5 @@ unzipPrimeirazip: ## Desconpacta o ficheiro primeira.zip
 
 
 
-execute: ## Cria o executavel do script bash
+execute: ## Cria o executavel do script bash e executa-o
 	@chmod 755 tp02_17694.sh && ./tp02_17694.sh
