@@ -578,5 +578,10 @@ else
   echo "Não foi executado qualquer comando!"
 fi
 
+# Apaga pasta temporaria
+if [ -d "$TEMPDIR" ]; then
+  rm -rf "$TEMPDIR"
+fi
+
 echo "Bye!!!!"
 IFS=$OLDIFS
