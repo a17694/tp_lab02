@@ -8,8 +8,8 @@
 
 ***
 1. Colocar o ficheiro **legos.zip** na raiz do projeto
-2. Comando para obter os comandos disponiveis
-(Nota: tem que estar instalado o comando make)
+2. Comando para obter os comandos disponíveis
+   (Nota: tem que estar instalado o comando make)
     ```shell
     make
     ```
